@@ -1,0 +1,32 @@
+# STT SSL configs — Phase 0 skeleton; filled Phase 3 (variant decision: ADR-02 addendum)
+
+stt_ssl:
+  variant: hubert                # wav2vec2 | hubert (decided in ADR-02 addendum)
+  sample_rate: 16000
+  encoder_dim: 256
+  encoder_layers: 6
+  n_heads: 4
+  mask_time_prob: 0.065
+  mask_channel_prob: 0.0
+  feat_extract_dim: 512
+
+  # HuBERT: cluster targets (stt/ssl/cluster.py)
+  num_clusters: 320
+  cluster_seed: 42
+
+  # Wav2Vec2
+  num_groups: 2
+  num_vars: 320
+  latent_dim: 128
+  contrastive_temp: 0.1
+
+  # Training
+  batch_size: 16
+  lr: 0.001
+  max_steps: 200000              # data-dependent (Phase 3)
+  ema_decay: 0.999
+  wd: 0.01
+
+eval:
+  phoneme_probe_interval_steps: 5000
+  phoneme_recall_gate: 0.50      # docs/phase3_ssl.md

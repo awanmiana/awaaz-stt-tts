@@ -74,3 +74,12 @@ From-scratch design decisions, with tradeoffs. Original spec in [architecture.md
 ---
 
 All decisions: from-scratch (no pretrained weights); public datasets/libraries as allowed (see data/collections).
+
+## ADR-02b: SSL variant — HuBERT vs Wav2Vec 2.1 (Phase 3, data-dependent)
+
+**Context:** Pure-Urdu audio; both variants from scratch; variant decision is data-dependent (docs/phase3_ssl.md).
+
+**Decision:** HuBERT by default (cluster targets via k-means; simpler CE loss; no contrastive loss).
+**Alternative:** Wav2Vec 2.1 (contrastive targets) — switch if the phoneme probe shows poor cluster quality (gate: per-phoneme recall ≥50%, docs/phase3_ssl.md).
+
+**Fill after Phase 3 Week 1 data audit (docs/phase3_data_audit.md).**

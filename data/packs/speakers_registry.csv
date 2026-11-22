@@ -1,0 +1,3 @@
+# Speaker registry (Phase 1)
+# Filled in as pack voices are recorded.
+voice_id,name,gender,age_range,region,role,hours_recorded,style_variants,enrollment_clips,consent_signed_date,active

@@ -1,0 +1,26 @@
+# TTS pack voices (Phase 1). 3 pack voices + open enrollment (Phases 5/7).
+tts_packs:
+  - voice_id: spk-01
+    role: pack voice
+    gender: female
+    age_range: adult
+    region: Lahore
+    target_hours: 1.5
+    style_variants: [warm, neutral, energetic, academic]
+    enrollment: true
+  - voice_id: spk-02
+    role: pack voice
+    gender: male
+    age_range: adult
+    region: Karachi
+    target_hours: 1.5
+    style_variants: [neutral, academic, poetic, debate]
+    enrollment: true
+  - voice_id: spk-03
+    role: pack voice
+    gender: female
+    age_range: adult
+    region: Islamabad
+    target_hours: 1.5
+    style_variants: [warm, energetic, street, casual]
+    enrollment: true

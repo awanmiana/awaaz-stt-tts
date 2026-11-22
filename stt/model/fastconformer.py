@@ -29,32 +29,30 @@ class FastConformerConfig:
 
 
 class ConvSubsampling(nn.Module):
-    """Stacked strided Conv2d subsampling (FastConformer style, ~8x)."""
+    """Time-axis strided Conv1d subsampling (~8x for subsample_factor=8).
+
+    Skeleton (Phase 2): Conv1d stack keeps feature dim F; time axis 8x down.
+    (FastConformer uses Conv2d; Conv1d is a valid simplification.)
+    """
 
     def __init__(self, feat_dim: int, d_model: int, subsample_factor: int = 8):
         super().__init__()
         self.subsample_factor = subsample_factor
         n_stages = max(1, int(round(math.log2(subsample_factor))))
         layers = []
-        cin = 1
-        for i in range(n_stages):
-            cout = d_model if i > 0 else d_model
+        cin = feat_dim
+        for _ in range(n_stages):
             layers += [
-                nn.Conv2d(cin, cout, kernel_size=3, stride=2, padding=1),
-                nn.BatchNorm2d(cout),
+                nn.Conv1d(cin, d_model, kernel_size=5, stride=2, padding=2),
                 nn.ReLU(),
             ]
-            cin = cout
+            cin = d_model
         self.conv = nn.Sequential(*layers)
-        self.proj = nn.Linear(d_model, d_model)
+        self.proj = nn.Identity()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [B, T, F] -> [B, T', d_model]
-        x = x.unsqueeze(1)
-        x = self.conv(x)
-        b, d, t, f = x.shape
-        x = x.permute(0, 2, 1, 3).reshape(b, t, d * f)
-        return self.proj(x)
+        return self.conv(x.transpose(1, 2)).transpose(1, 2)
 
 
 class RelPositionalEncoding(nn.Module):

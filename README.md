@@ -13,7 +13,13 @@ Style coverage: neutral, warm, energetic, academic, poetic, debate/rhetoric, str
 
 ## Status & roadmap
 
-See [docs/roadmap.md](docs/roadmap.md). **Phase 0 (foundation) is in progress.**
+See [docs/roadmap.md](docs/roadmap.md). **Current:** Phase 0 (foundation) committed; Phase 1 data collection executing; Phase 2 architecture locked; Phase 3 SSL prep; Phase 4 starts when audits pass.
+
+## Where it lives
+
+- **GitHub** (`awaniana/awaaz-stt-tts`): code, docs, configs, data pipelines.
+- **Hugging Face Hub** (`awaniana/awaaz-stt-tts`): model weights (STT/TTS checkpoints) during training; public release as ready.
+- TTS voice packs: private (consent-based, see `data/packs/`).
 
 ## Layout
 

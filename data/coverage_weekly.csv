@@ -1,0 +1,13 @@
+metric,hours,target,status
+style:poetry,0.0,40,SHORT (0.0/40)
+style:debate,0.0,40,SHORT (0.0/40)
+style:academic,0.0,40,SHORT (0.0/40)
+style:street,0.0,40,SHORT (0.0/40)
+style:everyday,0.0,50,SHORT (0.0/50)
+style:neutral,0.0,20,SHORT (0.0/20)
+domain:news,0.0,10,SHORT (0.0/10)
+domain:academic,0.0,10,SHORT (0.0/10)
+domain:technical,0.0,5,SHORT (0.0/5)
+domain:medical,0.0,5,SHORT (0.0/5)
+domain:everyday/fiction,0.0,20,SHORT (0.0/20)
+speakers,0,3,SHORT (0.0/3.0)

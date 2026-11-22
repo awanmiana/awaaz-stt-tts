@@ -23,8 +23,14 @@ class Hubert(nn.Module):
         self.encoder = TransformerEncoder(d_model, n_layers, n_heads)
         self.proj = nn.Linear(d_model, vocab_size)
 
-    def masked_unit_loss(self, logits, targets, mask):  # pragma: no cover - Phase 3
-        raise NotImplementedError("HuBERT loss filled Phase 3 (masked cross-entropy).")
+    def masked_unit_loss(self, logits: torch.Tensor, targets: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        """Cross-entropy on masked frames (Phase 3).
+
+        logits: [B, T, V] (encoder latents projected); targets: [B, T] cluster IDs; mask: [B, T] bool.
+        """
+        logits_m = logits[mask]  # [N, V]
+        targets_m = targets[mask]  # [N]
+        return torch.nn.functional.cross_entropy(logits_m, targets_m)
 
 
 if __name__ == "__main__":  # pragma: no cover

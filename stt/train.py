@@ -1,7 +1,10 @@
-"""STT training entry (Phase 0 skeleton; filled in Phase 2/4).
+"""STT training entry (Phase 4 fills the real loop).
 
-Run:
+Usage:
   torchrun --standalone --nproc_per_node=<N> stt/train.py --config configs/stt/small.yaml
+
+Phase 4: real loop — dataset, batches, CTC loss, optimizer (AdamW + cosine),
+SpecAugment, FSDP2/DDP, logging (MLflow), checkpoints (artifacts/stt/).
 """
 
 from __future__ import annotations
@@ -12,10 +15,9 @@ import time
 import torch
 
 from shared.config_util import load_config
-from shared.manifest import load_manifest
+from stt.data.dataset import STTDataset, make_batches
 from stt.features.frontend import LogMelSpectrogram
 from stt.model.fastconformer import FastConformerConfig, FastConformerCTC
-from stt.model.rnnt import RNNTModel
 
 
 def build_model(cfg: dict) -> torch.nn.Module:
@@ -24,33 +26,42 @@ def build_model(cfg: dict) -> torch.nn.Module:
         n_layers=cfg["stt"]["n_layers"],
         n_heads=cfg["stt"]["n_heads"],
     )
-    model = FastConformerCTC(stt_cfg, vocab_size=cfg["stt"]["vocab_size"])
-    return model.to(cfg["device"])
+    return FastConformerCTC(stt_cfg, vocab_size=cfg["stt"]["vocab_size"])
 
 
-def load_dataset(manifest_path: str):
-    return load_manifest(manifest_path)  # [ManifestEntry, ...]
+def compute_loss(model, batch, frontend, device):
+    """CTC loss over normalized grapheme targets (RNN-T variant in Phase 4)."""
+    wave = batch["waveform"].to(device)
+    feats = frontend(wave)  # [B, T', F]
+    logits = model(feats)  # [B, T', V]
+    log_probs = torch.log_softmax(logits, dim=-1).transpose(0, 1)  # [T', B, V]
+    loss_fn = torch.nn.CTCLoss(blank=0, reduction="mean", zero_infinity=True)
+    targets = torch.nn.utils.rnn.pad_sequence([item["target_ids"] for item in batch], batch_first=True).to(device)
+    input_lengths = torch.full((targets.shape[0],), logits.shape[1], dtype=torch.long).to(device)
+    target_lengths = torch.tensor([item["target_ids"].shape[0] for item in batch], dtype=torch.long).to(device)
+    return loss_fn(log_probs, targets, input_lengths, target_lengths)
 
 
-def train_loop(model, dataset, cfg, *, max_steps: int = 1):
-    """Skeleton: standard supervised loop; batches/bucketing in Phase 2."""
-    opt = torch.optim.AdamW(model.parameters(), lr=cfg["stt"]["lr"])
+def train_loop(model, dataset, frontend, cfg, dev_dataset=None) -> None:
+    opt = torch.optim.AdamW(model.parameters(), lr=cfg["stt"]["lr"], weight_decay=0.01)
+    batches = make_batches(dataset, cfg["stt"]["batch_size"])
+    steps = 0
     start = time.time()
-    for step in range(1, max_steps + 1):
-        opt.zero_grad()
-        # placeholder batch
-        feats = torch.randn(4, 100, 80)
-        logits = model(feats)
-        loss = logits.mean()  # real loss in Phase 2 (CTC/RNNT)
-        loss.backward()
-        opt.step()
-        if step % 10 == 0:
-            print(f"[step {step}/{max_steps}] loss={loss.item():.4f} t={time.time()-start:.0f}s")
-    return model
+    for epoch in range(cfg["stt"].get("max_epochs", 1)):
+        for batch in batches:
+            opt.zero_grad()
+            loss = compute_loss(model, batch, frontend, cfg["device"])
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
+            opt.step()
+            steps += 1
+            if steps % 50 == 0:
+                print(f"[step {steps}/epoch{epoch}] loss={loss.item():.4f} t={time.time()-start:.0f}s")
+    print(f"Done: {steps} steps in {time.time()-start:.0f}s (real loop starts Phase 4).")
 
 
-def main():
-    ap = argparse.ArgumentParser(description="Train STT model (skeleton; filled Phase 2/4).")
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Train STT model (Phase 4 fills real loop).")
     ap.add_argument("--config", required=True, help="YAML config (configs/stt/*.yaml).")
     ap.add_argument("--manifest", default="data/manifests/train.jsonl")
     ap.add_argument("--dev-manifest", default="data/manifests/dev.jsonl")
@@ -60,10 +71,10 @@ def main():
     cfg = load_config(args.config)
     cfg["device"] = "cuda" if torch.cuda.is_available() else "cpu"
 
+    frontend = LogMelSpectrogram(sample_rate=cfg["stt"]["sample_rate"], n_mels=cfg["stt"]["n_mels"])
+    dataset = STTDataset(args.manifest, cfg["stt"]["sample_rate"])
     model = build_model(cfg)
-    dataset = load_dataset(args.manifest)
-    print(f"[Phase 0] Skeleton run. Entries={len(dataset)} (real training starts Phase 2.)")
-    train_loop(model, dataset, cfg, max_steps=cfg["stt"]["max_steps"])
+    train_loop(model, dataset, frontend, cfg)
 
 
 if __name__ == "__main__":

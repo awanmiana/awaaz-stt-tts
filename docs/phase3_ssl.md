@@ -2,7 +2,7 @@
 
 Timeline: **1–3 months (data-dependent)** — pure Urdu audio, success defined by phoneme probe (gate below).
 
-Context: ADR-02 — wav2vec 2.1 (contrastive) or HuBERT (cluster targets).
+Context: ADR-02b — variant decision: HuBERT by default (Wav2Vec 2.1 alternative; switch if the phoneme probe is poor).
 
 ## Deliverables
 

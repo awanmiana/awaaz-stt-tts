@@ -1,0 +1,53 @@
+# TTS config — codec-LM (CosyVoice-class) default (Phase 0; filled in Phase 2/5)
+
+tts:
+  version: tts-v0.1
+  arch: codec-lm
+  sample_rate: 24000       # codec + decoder frame rate (filled Phase 5)
+
+  # Codec (trained in Phase 5)
+  codec:
+    frame_rate: 12.5      # tokens per second (80ms per token)
+    codebooks: 8
+    codebook_size: 1024
+    latent_dim: 64
+
+  # Speaker encoder + style embedder (from scratch, Phase 5)
+  speaker_encoder:
+    arch: ecapa-tdnn-class
+    emb_dim: 192
+  # style_embedder: null  # added Phase 5
+
+  # Codec-LM (transformer over speech tokens; Phase 6)
+  acoustic:
+    d_model: 384
+    n_layers: 12
+    n_heads: 8
+    max_len: 8192
+    vocab_size: 8192      # 8 codebooks x 1024
+
+  # Voice packs (Phase 1) — speaker IDs of pack voices
+  speakers:
+    - spk-01
+    - spk-02
+    - spk-03
+
+  # Defaults (style variants, Phase 6)
+  defaults:
+    speed: 1.0
+    style: neutral        # neutral | warm | energetic | academic | poetic | debate | street | casual
+
+  # Sampling
+  sampling:
+    temperature: 0.8
+    top_p: 0.95
+    top_k: 50
+
+  # Streaming
+  stream:
+    chunk_seconds: 0.2
+
+  # Privacy / consent (Phase 1/8)
+  voice_enrollment:
+    min_seconds: 10
+    consent_required: true

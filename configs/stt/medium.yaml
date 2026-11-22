@@ -1,0 +1,34 @@
+# STT configs — Phase 0 (small/medium/large tiers; filled in Phase 2)
+
+stt:
+  version: stt-v0.1
+  arch: fastconformer
+  lang: ur
+
+  d_model: 256
+  n_layers: 16
+  n_heads: 8
+
+  sample_rate: 16000
+  n_mels: 80
+  win_ms: 25
+  hop_ms: 10
+  conv_subsampling: 8x
+
+  loss: ctc+rnn-t
+  ctc_weight: 0.8
+  rnnt_weight: 0.2
+
+  batch_size: 16
+  lr: 0.0005
+  max_steps: 10000
+  spec_aug: true
+  speed_perturb: [0.9, 1.0, 1.1]
+
+  decoding:
+    beam_size: 4
+    lm_weight: 0.3
+    use_lm: true
+    timestamp_tolerance_ms: 200
+
+  vocab_size: 81           # grapheme vocab — shared/vocab.py (STT_VOCAB_SIZE)

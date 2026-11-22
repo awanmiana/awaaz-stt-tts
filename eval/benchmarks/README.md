@@ -1,35 +1,43 @@
-# eval/benchmarks — benchmark setup & harness docs (Phase 4/6 targets)
+# Benchmarks (Phase 4–6 fill; setup in Phase 2)
 
-# Benchmark plan (filled in Phases 4–6):
+## STT benchmark setup (run after Phase 4 training)
 
-## STT (after Phase 4)
+Per-style dev sets: `data/dev/dev_<style>.jsonl` (poetry, debate, academic, street, everyday, neutral).
 
-Reference runs (on pure-Urdu dev sets per style, per roadmap):
+### Objective tiers (roadmap objectives; measured on our pure-Urdu dev sets)
 
-1. **Our STT** (this repo, any tier): decode dev set, compute WER/CER per style/domain.
-2. **whisper-large-v3** (open): same dev set → open-class tier baseline.
-3. **Google Gemini Live** (if accessible): same audio → transcribe.
-4. **OpenAI Whisper API** (ChatGPT tier, if accessible): same audio.
-5. **Microsoft Azure Speech** (STT): same audio.
-6. **Meta SeamlessM4T v2**: same audio.
+| Tier | Objective |
+|---|---|
+| Small (<100M) | whisper-large-v3 WER + margin (reference tier — see below) |
+| Medium (100–250M) | whisper-large-v3 WER (baseline) |
+| Large (250–500M) | whisper-large-v3 WER − margin |
 
-Deliverables: `docs/benchmarks/stt_table.md` with WER columns; pass criteria from roadmap.
+Reference runs (benchmarks against the big-five + whisper-large-v3):
 
-## TTS (after Phase 6)
+| Reference | How | Access notes |
+|---|---|---|
+| whisper-large-v3 | `pip install transformers`; transcribe dev sets | Urdu-supported; open |
+| Google Gemini Live | Google AI API (Gemini Live models); transcribe dev sets | Requires Google account/API key; check Urdu support |
+| OpenAI Whisper API (ChatGPT tier) | `openai` package; `whisper-1`; transcribe dev sets | Requires API key; Urdu support varies |
+| Microsoft Azure Speech (STT) | Azure Speech-to-Text; transcribe dev sets | Requires Azure subscription |
+| Meta SeamlessM4T v2 | `seamless_m4t_v2_large` via transformers/hub | Open model (Hugging Face hub) |
+
+Deliverables: `docs/benchmarks/stt_table.md` — WER by style/domain/speaker per tier vs. references; pass criteria from roadmap.
+
+## TTS benchmark setup (run after Phase 6 training)
 
 Automated:
-- UTMOS (per-deployment, e.g., via a public UTMOS model — used as an automated proxy).
-- Speaker similarity: extract speaker embeddings with our speaker encoder on enrollments vs. outputs.
-- Speed/pitch control verification (stable over repeated runs).
+- **UTMOS** (public UTMOS model as automated proxy) — per tier.
+- **Speaker similarity:** our speaker encoder on enrollments vs. outputs (target ≥0.85).
+- **Style accuracy:** our StyleClassifier (target ≥85%); human eval ≥90% on ≥10 prompts/class (see below).
 
-Human:
-- MOS via listening trials on ≥10 prompts/style/tier.
+Human: MOS via listening trials on ≥10 prompts/style/tier (`docs/benchmarks/tts_table.md`).
 
-Deliverables: `docs/benchmarks/tts_table.md`.
+Prompts: same Urdu prompts as `data/dev/prompts/*.jsonl` (style-balanced; reused from STT dev sets).
 
-## Setup notes
+Reference tiers (from roadmap objectives): top-open TTS (CosyVoice-2/NaturalSpeech-3-class; note in tables that these are reference tiers, measured via automated metrics where accessible, otherwise by design review).
 
-- whisper-large-v3: `pip install transformers && transformers-cli` —Urdu-supported.
-- OpenAI Whisper API: needs API key; model `whisper-1`.
-- Google Gemini Live / Azure Speech / Meta SeamlessM4T v2: require accounts/keys; measure during dev.
-- Proprietary tiers: no published per-language numbers — we measure on dev sets; note any access limitations in the table.
+## Notes
+
+- Proprietary products: no published per-language benchmarks — measure ourselves on dev sets; note access limitations.
+- GitHub: weights on HF Hub (`huggingface.co/awaniana/awaaz-stt-tts`).

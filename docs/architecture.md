@@ -1,57 +1,50 @@
-# High-level architecture (Phase 0 — draft)
+# Architecture (Phase 0–2)
 
 ## STT (Speech-to-Text)
 
 ```
-audio (wav/pcm)
-   │
+audio (wav/pcm, 16–24kHz)
+   │  stt/features/frontend.py — log-mel 80-bin, 25ms/10ms
    ▼
-Frontend (80-bin log-mel, win=25ms, hop=10ms)
-   │
+FastConformerEncoder (stt/model/fastconformer.py)
+   │  ConvSubsampling 8x → RelPos MHA + depthwise conv module + FFN blocks
+   ├─▶ CTC head (logits over STT grapheme vocab, shared/vocab.py, 81)
+   └─▶ RNN-T (optional: stt/model/rnnt.py — predictor+joint)
+   │  stt/decode/beam.py — greedy CTC decode + beam search + LM fusion (KenLM, Phase 4)
    ▼
-FastConformerEncoder  (ConvSubsampling 8× + Conformer blocks: rel-pos MHA + conv module + FFN)
-   │
-   ├─▶ CTC head → log-probs over Urdu phoneme set (CTC auxiliary head)
-   └─▶ RNN-T (optional alternative: predictor + joint network)
-   │
-   ▼
-Beam search decode (rel-pos aware, external KenLM fusion at eval)
-   │
-   ▼
-transcript (Urdu graphemes), word segments, confidence
+transcript (Urdu graphemes), word segments (timestamps), confidence
 ```
 
-Variants:
-- Small: d_model=128, n_layers=8 (~<100M params)
-- Medium: d_model=256, n_layers=16 (~100–250M)
-- Large: d_model=512, n_layers=24 (~250–500M)
-
-Optional SSL stage: wav2vec 2.1 / HuBERT (pure-Urdu audio) → fine-tune above.
+- From scratch: no pretrained weights.
+- Size tiers (configs/stt/): small <100M, medium 100–250M, large 250–500M.
+- SSL stage (Phase 3): wav2vec2.1/HuBERT on pure-Urdu audio → fine-tune.
+- Decoding: beam + external KenLM trained on Urdu text (shared/text_norm.py input).
 
 ## TTS (Text-to-Speech)
 
 ```
 text (Urdu)
+   │  shared/g2p/urdu_g2p.py (rule-based v0; trained disambiguator Phase 2) + shared/text_norm.py
+   │  → phonemes + prosody priors (durations/pitch from alignment, Phase 5)
+   ▼
+SpeakerEncoder (tts/speaker_encoder.py — ECAPA-TDNN-class, 192-d, from scratch)
+StyleEmbedder (tts/style_embedder.py — tag + continuous style; Phase 5/6)
    │
    ▼
-Urdu G2P + text norm (shared/)  → phonemes + prosody priors (duration/pitch from alignment)
+CodecLM (tts/model/codec_lm.py — transformer over speech tokens; text+speaker+style conditioning; Phase 6)
    │
    ▼
-SpeakerEncoder (ECAPA-TDNN-class) ──→ speaker embedding
-StyleEmbedder ───────────────────────→ style embedding (emotion/pace/timbre)
+ResidualVQ Decoder (tts/codec/quantizer.py) → codec latents (12.5 fps, 8×1024; Phase 5)
    │
    ▼
-CodecLM (transformer over speech tokens; text+speaker+style conditioning; streaming)
-   │
-   ▼
-ResidualVQ Decoder → codec latents
-   │
-   ▼
-HiFi-Gan-ish Vocoder → waveform
+ConvDecoder (tts/codec/decoder.py — HiFi-Gan-ish; Phase 5) → waveform
 ```
 
-Voice enrollment: upload consent-recorded clip → speaker encoder → cloneable voice.
+- Voice enrollment: user uploads consented clip → speaker encoder → cloneable voice (Phases 5/7).
+- Streaming: codec-LM generates chunk-by-chunk (Phase 7/8).
 
 ## API (Phase 7)
 
-OpenAI-compatible REST: `/v1/audio/transcriptions`, `/v1/audio/speech` (+ streaming variants, `/v1/voice/enroll`, health/config endpoints). SaaS multi-tenant with quotas, caching, consent APIs.
+OpenAI-compatible REST: `/v1/audio/transcriptions`, `/v1/audio/speech` (+stream), `/v1/voice/enroll` (api/main.py).
+
+Decisions: [docs/architecture_decisions.md](architecture_decisions.md) (ADR-01..06).

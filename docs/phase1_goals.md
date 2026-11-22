@@ -2,14 +2,18 @@
 
 Timeline: 3–5 months (per roadmap). Exit gate: "data ready for Phase 2 (architecture lock)".
 
+Campaign plans (execution):
+- [STT Narration Campaign Plan](../collections/campaigns/STT_narration_campaign_plan.md)
+- [TTS Voice Pack Campaign Plan](../collections/campaigns/TTS_voice_pack_campaign_plan.md)
+
 ## Targets
 
 ### STT corpus (pure Urdu)
 - **Total: ≥2,000 hours** (flexible; grows as gates demand — roadmap says "benchmarks decide").
 - **Style coverage (from roadmap §Style coverage):** poetry ≥40h, debate ≥40h, academic ≥40h, street ≥40h, everyday ≥50h, neutral ≥20h.
 - **Domain mix:** news ≥10h, academic ≥10h, technical ≥5h, medical ≥5h, everyday ≥20h, fiction/poetry ≥10h.
-- **Speakers:** ≥3 distinct STT speakers (recommend 4–6 total) for dev-set balance.
-- **Format:** 16–24kHz, 16-bit PCM, normalized (phases 2/5), deduped, forced-aligned.
+- **Speakers:** ≥3 distinct STT speakers (recommend 4–6 total).
+- **Format:** 16–24kHz, 16-bit PCM, normalized (Phase 2/5), deduped, forced-aligned.
 
 ### TTS voice packs
 - **3 pack voices** (per `configs/tts/default.yaml`: spk-01..spk-03) — more if gates demand.
@@ -22,10 +26,10 @@ Timeline: 3–5 months (per roadmap). Exit gate: "data ready for Phase 2 (archit
 
 ## Gates (exit criteria)
 1. Volume gates (STT hours per style/domain; TTS pack hours per voice; dev sets filled).
-2. Quality gates: sample review pass (QC sample: SNR, duplicates, speaker attribution); transcript QC pass (sample human transcription check ~5% of entries).
-3. Legal: public-corpus licenses reviewed and approved by mid-Phase 1; consent forms for pack voices signed before recording starts.
+2. Quality gates: sample review pass (QC sample: SNR, duplicates, speaker attribution); transcript QC pass (~5% human transcription check).
+3. Legal: public-corpus licenses approved by mid-Phase 1; consent forms for pack voices signed before recording starts.
 4. Storage: `data/raw/` + `data/manifests/` populated; manifests valid (run `python -m data.scripts.normalize_transcripts` + `make_manifest` sanity).
 
 ## Sources & collection plan
 
-See `data/collections/README.md`.
+See `data/collections/` (campaigns + public-corpus review list).
